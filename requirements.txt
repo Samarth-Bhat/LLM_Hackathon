@@ -1,4 +1,15 @@
-gensim==4.3.2
+# Core Python Libraries
+numpy==1.24.3
+typing==3.7.4.3
+
+# NLP and ML Libraries
 nltk==3.8.1
-faiss-cpu==1.7.3
-numpy==1.24.2
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4  # Specifically for CPU processing
+
+# Utility Libraries
+torch==2.0.1  # CPU version
+transformers==4.30.2
+
+# Optional but recommended
+scikit-learn==1.2.2
