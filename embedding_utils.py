@@ -74,6 +74,8 @@ def train_word2vec(sentences):
     print("Training Word2Vec model...")
     model = Word2Vec(sentences, vector_size=100, window=5, min_count=1, workers=4)
     print("Word2Vec model trained.")
+    
+    model.save("embedding_model")
     return model
 
 def create_faiss_index(word_vectors):
