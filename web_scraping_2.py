@@ -3,21 +3,17 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-DATASETS_PATH = r"C:\home\ananth\research\my_projects\pharma_llm\datasets"
+DATASETS_PATH = r"new_data"
 DATASETS_MICROLABS_USA = os.path.join(DATASETS_PATH, "microlabs_usa")
 
-URLS = {
-    "Acetazolamide Extended-Release Capsules": "https://www.microlabsusa.com/products/acetazolamide-extended-release-capsules/",
-    "Amlodipine Besylate and Olmesartan Medoxomil Tablets": "https://www.microlabsusa.com/products/amlodipine-besylate-and-olmesartan-medoxomil-tablets/",
-    "Amoxicillin and Clavulanate Potassium for Oral Suspension, USP": "https://www.microlabsusa.com/products/amoxicillin-and-clavulanate-potassium-for-oral-suspension-usp/",
-    "Amoxicillin and Clavulanate Potassium Tablets, USP": "https://www.microlabsusa.com/products/amoxicillin-and-clavulanate-potassium-tablets-usp/",
-    "Amoxicillin Capsules, USP": "https://www.microlabsusa.com/products/amoxicillin-capsules-usp/",
-    "Aspirin and Extended-Release Dipyridamole Capsules": "https://www.microlabsusa.com/products/aspirin-and-extended-release-dipyridamole-capsules/",
-    "Atorvastatin Calcium Tablets": "https://www.microlabsusa.com/products/atorvastatin-calcium-tablets/",
-    "Bimatoprost Ophthalmic Solution": "https://www.microlabsusa.com/products/bimatoprost-ophthalmic-solution/",
-    "Celecoxib capsules": "https://www.microlabsusa.com/products/celecoxib-capsules/",
-    "Chlordiazepoxide Hydrochloride and Clidinium Bromide Capsules, USP": "https://www.microlabsusa.com/products/chlordiazepoxide-hydrochloride-and-clidinium-bromide-capsules-usp/",
-}
+URLS_FILE_PATH = r"drug_urls.json"
+
+def load_drug_urls():
+    """Load drug URLs from the saved JSON file."""
+    with open(URLS_FILE_PATH, "r", encoding="utf-8") as f:
+        drug_urls = json.load(f)
+    print(f"Loaded {len(drug_urls)} drug URLs.")
+    return drug_urls
 
 
 def setup_prescribing_info_urls(urls_map):
@@ -32,7 +28,7 @@ def setup_prescribing_info_urls(urls_map):
     updated_urls = {}
 
     for key, value in urls_map.items():
-        # print("Processing: ", key)
+        print(f"Processing: {key}...")  # Progress statement
         got = False
         updated_urls[key] = {
             "product_url": value,
@@ -57,6 +53,11 @@ def setup_prescribing_info_urls(urls_map):
                         got = True
             if got:  # we got the url and soup for "Prescribing Information" and so we break
                 break
+        
+        if got:
+            print(f"Found Prescribing Information for: {key}")  # Progress statement
+        else:
+            print(f"Prescribing Information not found for: {key}")  # Progress statement
 
     return updated_urls
 
@@ -70,6 +71,7 @@ def find_elements_with_text(soup):
                 elements_with_text.append(element)
 
     # Print the elements and their text content
+    print("Found elements with text:")
     for elem in elements_with_text:
         print(f"Tag: {elem.name}, Text: {elem.get_text(strip=True)}")
 
@@ -119,6 +121,7 @@ def get_all_sections(soup):
             if at and at.startswith("anch_dj_dj-dj"):
                 txt = get_text_below_anchor_with_special_handling(atag)
                 info[atag.get_text()] = txt
+
     return info
 
 
@@ -129,7 +132,7 @@ def process_prescribing_soup(name, soup):
     :param soup: bs4 soup object
     :return: parsed content as dict
     """
-    # div = soup.find('div', class_='drug-label-sections')
+    print(f"Processing Prescribing Information for {name}...")  # Progress statement
     results = get_all_sections(soup)
     results["product_name"] = name
     return results
@@ -139,22 +142,24 @@ def create_dataset_file(pth, result):
     fname = os.path.join(pth, result["product_name"] + ".json")
     with open(fname, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=4)
+    print(f"Created file: {fname}")  # Progress statement
     return
 
 
 if __name__ == '__main__':
-    modified_urls = setup_prescribing_info_urls(URLS)
+    print("Starting process...")  # Progress statement
+
+    # Load drug URLs
+    drug_urls = load_drug_urls()
+    if not drug_urls:
+        print("No drug URLs found. Exiting process.")
+        exit()
+
+    # Proceed with the rest of the script
+    modified_urls = setup_prescribing_info_urls(drug_urls)
     for k, v in modified_urls.items():
         results = process_prescribing_soup(k, v["prescribing_soup"])
         create_dataset_file(DATASETS_MICROLABS_USA, results)
 
-        # print("-" * 100)
-        # print(results.keys())
-
-    # print(results)
-
-
-
-
-
+    print("Process completed.")  # Progress statement
 
